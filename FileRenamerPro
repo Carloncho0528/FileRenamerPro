@@ -1,0 +1,86 @@
+import os
+from datetime import datetime
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
+class FileRenamerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Renombrador de Archivos en Masa")
+        self.root.geometry("600x400")
+        
+        # Variables
+        self.folder_path = tk.StringVar()
+        self.prefix = tk.StringVar()
+        self.use_numbering = tk.BooleanVar()
+        self.use_date = tk.BooleanVar()
+        
+        # Interfaz
+        self.create_widgets()
+        
+    def create_widgets(self):
+        # Frame para selección de carpeta
+        folder_frame = tk.LabelFrame(self.root, text="Seleccionar Carpeta", padx=10, pady=10)
+        folder_frame.pack(padx=10, pady=5, fill="x")
+        
+        tk.Entry(folder_frame, textvariable=self.folder_path, width=50).pack(side="left", padx=5)
+        tk.Button(folder_frame, text="Examinar", command=self.browse_folder).pack(side="left")
+        
+        # Frame para opciones de renombrado
+        options_frame = tk.LabelFrame(self.root, text="Opciones de Renombrado", padx=10, pady=10)
+        options_frame.pack(padx=10, pady=5, fill="x")
+        
+        tk.Label(options_frame, text="Prefijo:").grid(row=0, column=0, padx=5, pady=5)
+        tk.Entry(options_frame, textvariable=self.prefix).grid(row=0, column=1, padx=5, pady=5)
+        
+        tk.Checkbutton(options_frame, text="Agregar numeración", variable=self.use_numbering).grid(row=1, column=0, columnspan=2, sticky="w", padx=5, pady=5)
+        tk.Checkbutton(options_frame, text="Agregar fecha", variable=self.use_date).grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=5)
+        
+        # Botón de renombrar
+        tk.Button(self.root, text="Renombrar Archivos", command=self.rename_files, bg="#4CAF50", fg="white").pack(pady=20)
+    
+    def browse_folder(self):
+        folder = filedialog.askdirectory()
+        if folder:
+            self.folder_path.set(folder)
+    
+    def rename_files(self):
+        folder = self.folder_path.get()
+        if not folder or not os.path.exists(folder):
+            messagebox.showerror("Error", "Seleccione una carpeta válida")
+            return
+            
+        prefix = self.prefix.get()
+        use_numbering = self.use_numbering.get()
+        use_date = self.use_date.get()
+        
+        try:
+            files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+            for index, filename in enumerate(files, 1):
+                file_path = os.path.join(folder, filename)
+                name, ext = os.path.splitext(filename)
+                
+                # Construir nuevo nombre
+                new_name = ""
+                if prefix:
+                    new_name += prefix + "_"
+                if use_date:
+                    date_str = datetime.now().strftime("%Y%m%d")
+                    new_name += date_str + "_"
+                if use_numbering:
+                    new_name += f"{index:03d}_"
+                
+                new_name += name + ext
+                new_file_path = os.path.join(folder, new_name)
+                
+                # Renombrar archivo
+                os.rename(file_path, new_file_path)
+            
+            messagebox.showinfo("Éxito", "Archivos renombrados correctamente")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al renombrar archivos: {str(e)}")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = FileRenamerApp(root)
+    root.mainloop()
